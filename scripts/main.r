@@ -64,7 +64,7 @@ accountData <- read.csv('../data/mainData.csv', stringsAsFactors = TRUE, colClas
     lines3d(coords, col="red", lwd=2)
     
     
-    # K-Means
+# K-Means
     # vyber, podla nas najlepsieho K
     best <- rep(0, 30)
     for (k in 1:30) best[k] <- kmeans(scale(pcaData), centers = k, nstart = 100)$tot.withinss
@@ -94,7 +94,42 @@ accountData <- read.csv('../data/mainData.csv', stringsAsFactors = TRUE, colClas
     coords <- coords * scale
     lines3d(coords, col="red", lwd=1)
     library(cluster)
-    # tu pokracujes adame
+# DBScan
+    library(dbscan)
+    # graf "k-distance"
+    epsVec <- seq(0.1, 1, by = 0.01)
+    nEps <- length(epsVec)
+    clustersNum <- rep(0, nEps)
+    # ktory nam da 4 clustre?
+    for (i in 1:nEps) {
+      clustersNum[i] <- length(table(dbscan(scale(pcaData), eps = epsVec[i])$cluster))
+    }
+    plot(epsVec, clustersNum, type = "b", pch = 19); grid()
+    
+    dbScanResult <- dbscan(scale(pcaData), eps = 0.14 , minPts = 5)
+    
+    scale <- 100
+    options(rgl.printRglwidget = TRUE)
+    plot3d(pcaResult$x[,1:3], col=dbScanResult$cluster + 1)
+    coords <- NULL
+    for (i in 1:nrow(pcaResult$rotation)) {
+      coords <- rbind(coords, rbind(c(0,0,0),pcaResult$rotation[i,1:3]))
+    }
+    
+    text3d(pcaResult$rotation[,1:3] * scale , 
+           texts=rownames(pcaResult$rotation), 
+           col="green", 
+           cex=0.8)
+    coords <- coords * scale
+    
+    lines3d(coords, col="green", lwd=0.5)
+    text3d(pcaResult$rotation[,1:3]  * (scale/90) , 
+           texts=rownames(pcaResult$rotation), 
+           col="blue", 
+           cex=0.8)
+    coords <- coords / 20
+    lines3d(coords, col="blue", lwd=1)
+# Class tree
     library(rpart)
     library(rpart.plot)
     set.seed(123)
@@ -148,39 +183,4 @@ accountData <- read.csv('../data/mainData.csv', stringsAsFactors = TRUE, colClas
     cM[1, 1] <- sum((treeDataTest[,3] == 'Burza|DeFi|Minner') & (forestPredResult == 'Burza|DeFi|Minner'))
     confusion.info(cM)    
     
-    # DBScan
-    library(dbscan)
-    # graf "k-distance"
-    epsVec <- seq(0.1, 1, by = 0.01)
-    nEps <- length(epsVec)
-    clustersNum <- rep(0, nEps)
-    # ktory nam da 4 clustre?
-    for (i in 1:nEps) {
-      clustersNum[i] <- length(table(dbscan(scale(pcaData), eps = epsVec[i])$cluster))
-    }
-    plot(epsVec, clustersNum, type = "b", pch = 19); grid()
-
-    dbScanResult <- dbscan(scale(pcaData), eps = 0.14 , minPts = 5)
-    
-    scale <- 100
-    options(rgl.printRglwidget = TRUE)
-    plot3d(pcaResult$x[,1:3], col=dbScanResult$cluster + 1)
-    coords <- NULL
-    for (i in 1:nrow(pcaResult$rotation)) {
-      coords <- rbind(coords, rbind(c(0,0,0),pcaResult$rotation[i,1:3]))
-    }
-    
-    text3d(pcaResult$rotation[,1:3] * scale , 
-           texts=rownames(pcaResult$rotation), 
-           col="green", 
-           cex=0.8)
-    coords <- coords * scale
-    
-    lines3d(coords, col="green", lwd=0.5)
-    text3d(pcaResult$rotation[,1:3]  * (scale/20) , 
-           texts=rownames(pcaResult$rotation), 
-           col="blue", 
-           cex=0.8)
-    coords <- coords / 20
-    lines3d(coords, col="blue", lwd=1)
     
